@@ -17,5 +17,4 @@ public class UserController {
                 new UserDTO(user.getName())
         );
     }
-
 }
