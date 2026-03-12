@@ -28,8 +28,11 @@ public class ContainerPeriod {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalValue;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(precision = 10, scale = 2)
     private BigDecimal totalSpent;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal Economy;
 
     @ManyToOne
     @JoinColumn(name = "container_fk")

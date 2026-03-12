@@ -26,8 +26,14 @@ public class Period {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(precision = 10, scale = 2)
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal value;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal totalSpent;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal Economy;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -36,12 +42,20 @@ public class Period {
     @Column(nullable = false)
     private int year;
 
+    private int containerCount = 0;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     public Period(BigDecimal value, Month month, int year, User user) {
         this.value = value;
+        this.month = month;
+        this.year = year;
+        this.user = user;
+    }
+
+    public Period(Month month, int year, User user) {
         this.month = month;
         this.year = year;
         this.user = user;
