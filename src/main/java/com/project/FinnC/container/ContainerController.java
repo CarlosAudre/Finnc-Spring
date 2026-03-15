@@ -1,7 +1,5 @@
 package com.project.FinnC.container;
 import com.project.FinnC.period.Period;
-import com.project.FinnC.period.PeriodBalanceDTO;
-import com.project.FinnC.period.PeriodDTO;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.user.User;
 import jakarta.validation.Valid;
@@ -14,7 +12,7 @@ import java.time.Month;
 import java.util.Optional;
 
 @RestController
-@RequestMapping(("/containers"))
+@RequestMapping(("/period/{year}/{month}/containers"))
 public class ContainerController {
     @Autowired
     ContainerService containerService;
@@ -24,7 +22,7 @@ public class ContainerController {
 
 
     @PostMapping
-    public ResponseEntity createContainer( //To revise
+    public ResponseEntity<ContainerDto> createContainer( //To revise
             @RequestBody @Valid ContainerDto containerDTO,
             @AuthenticationPrincipal User user,
             @PathVariable int year,
@@ -34,16 +32,30 @@ public class ContainerController {
         Optional<Period> periodOptional = periodRepository.findByUserAndMonthAndYear(user, monthEnum, year);
         if (periodOptional.isPresent()){
             Period period = periodOptional.get();
-            ContainerPeriod containerPeriod = containerService.createContainer(containerDTO, user, period);
-            return ResponseEntity.ok(containerPeriod);
+            ContainerDto containerDto = containerService.createContainer(containerDTO, user, period);
+            return ResponseEntity.ok(containerDto);
         }
 
         return ResponseEntity.notFound().build();
-
     }
 
-    @GetMapping("{id}")
-    public ResponseEntity getContainer(@PathVariable Long id){
+    @PutMapping("/{id}")
+    public ResponseEntity<ContainerDto> updateContainer(
+            @RequestBody @Valid ContainerDto containerDto,
+            @PathVariable Long id){;
+        return ResponseEntity.ok(containerService.updateContainer(containerDto, id));
+    }
+
+
+    @DeleteMapping("{id}/all")
+    public ResponseEntity<Void> deleteAllContainerPeriod(@PathVariable Long id){
+        containerService.deleteContainer(id);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ContainerDto> getContainer(@PathVariable Long id){
         ContainerDto containerDto = containerService.getContainer(id);
         return ResponseEntity.ok(containerDto);
     }

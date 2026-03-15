@@ -17,25 +17,24 @@ public class PeriodController {
 
 
     @GetMapping("/{year}/{month}")
-    public ResponseEntity getPeriod(
+    public ResponseEntity<PeriodDto> getPeriod(
             @AuthenticationPrincipal User user,
             @PathVariable int year,
             @PathVariable int month
     ){
-        PeriodDTO period = periodService.getPeriod(user, year, month);
+        PeriodDto period = periodService.getPeriod(user, year, month);
         return ResponseEntity.ok(period);
 
     }
 
     @PutMapping("/{year}/{month}/balance") //PutMapping is sufficient because it will never create another balance in the same period, only modify it
-    public ResponseEntity fillBalance(
+    public ResponseEntity<PeriodBalanceDTO> fillBalance(
             @AuthenticationPrincipal User user,
             @RequestBody @Valid PeriodBalanceDTO periodDTO,
             @PathVariable int year,
             @PathVariable int month
     ){
-        periodService.saveBalance(periodDTO, user, year, month);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(periodService.saveBalance(periodDTO, user, year, month));
     }
 
 

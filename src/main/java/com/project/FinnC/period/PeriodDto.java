@@ -5,7 +5,7 @@ import com.project.FinnC.container.ContainerDto;
 import java.math.BigDecimal;
 import java.util.List;
 
-public record PeriodDTO(
+public record PeriodDto(
         int year,
         int month,
         BigDecimal value,

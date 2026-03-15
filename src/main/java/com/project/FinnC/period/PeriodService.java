@@ -10,9 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 
@@ -58,19 +56,21 @@ public class PeriodService {
     }
 
 
-    public void saveBalance(PeriodBalanceDTO dto, User user, int year, int month) {
+    public PeriodBalanceDTO saveBalance(PeriodBalanceDTO dto, User user, int year, int month) {
         Month monthEnum = Month.of(month);
         Period period = periodRepository.findByUserAndMonthAndYear(user, monthEnum, year)
                 .orElseGet(() -> new Period(dto.value(), monthEnum, year, user));
         if(dto.value().compareTo(period.getTotalSpent()) < 0){
-            throw new PeriodBalanceInsufficientException("O total gasto é maior que o saldo inserido");
+            throw new PeriodBalanceInsufficientException("O total gasto é maior que o novo saldo inserido");
         }
         period.setValue(dto.value());
         period.setEconomy(dto.value().subtract(period.getTotalSpent()));
         periodRepository.save(period);
+
+        return new PeriodBalanceDTO(dto.value());
     }
 
-    public PeriodDTO getPeriod(User user, int year, int month){
+    public PeriodDto getPeriod(User user, int year, int month){
         Period period = createOrGetPeriod(user, year, month);
         int containerCount = period.getContainerCount();
         List<ContainerDto> containerDtos = containerPeriodRepository.findByPeriod(period)
@@ -84,7 +84,7 @@ public class PeriodService {
                         containerPeriod.getContainer().getEndDate(),
                         containerPeriod.getContainer().getColor()
                 )).toList();
-        return new PeriodDTO(year, month, period.getValue(), period.getTotalSpent(),
+        return new PeriodDto(year, month, period.getValue(), period.getTotalSpent(),
                 period.getEconomy(), containerCount, containerDtos);
     }
 
