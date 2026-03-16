@@ -1,7 +1,7 @@
 package com.project.FinnC.container;
 
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
-import com.project.FinnC.exeptions.EmailAlreadyExistsException;
+
 import com.project.FinnC.exeptions.PeriodBalanceInsufficientException;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
@@ -105,7 +105,7 @@ public class ContainerService {
             for (ContainerPeriod cp : containerPeriods) {
                 Period p = cp.getPeriod();
                 LocalDate periodDate = LocalDate.of(p.getYear(), p.getMonth().getValue(), 1); //Transform Year and month to localDate
-                if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod    
+                if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod
                         periodDate.isAfter(newEndDate)) {
                     toDelete.add(cp);
                 }
@@ -134,17 +134,21 @@ public class ContainerService {
         ContainerPeriod containerPeriod = containerPeriodRepository.findById(id)
                 .orElseThrow(ContainerPeriodNotFoundException::new);
         Container container = containerPeriod.getContainer();
-        Period period = containerPeriod.getPeriod();
 
-        BigDecimal periodNewTotalSpent = period.getTotalSpent().subtract(containerPeriod.getTotalValue());
-        BigDecimal periodNewEconomy = period.getEconomy().add(containerPeriod.getTotalValue());
+        List<ContainerPeriod> containerPeriods = containerPeriodRepository.findByContainer(container);
 
-        period.setTotalSpent(periodNewTotalSpent);
-        period.setEconomy(periodNewEconomy);
+        for (ContainerPeriod cp : containerPeriods){
+            Period period = cp.getPeriod();
+            BigDecimal newTotalSpent = period.getTotalSpent().subtract(cp.getTotalValue());
+            period.setTotalSpent(newTotalSpent);
+            period.setEconomy(period.getValue().subtract(newTotalSpent));
+            period.setContainerCount(period.getContainerCount() - 1);
 
-        containerPeriodRepository.deleteByContainer(container);
+            periodRepository.save(period);
+        }
+
+        containerPeriodRepository.deleteAll(containerPeriods);
         containerRepository.delete(container);
-        periodRepository.save(period);
     }
 
 
