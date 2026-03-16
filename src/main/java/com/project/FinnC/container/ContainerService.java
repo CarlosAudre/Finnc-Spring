@@ -134,17 +134,21 @@ public class ContainerService {
         ContainerPeriod containerPeriod = containerPeriodRepository.findById(id)
                 .orElseThrow(ContainerPeriodNotFoundException::new);
         Container container = containerPeriod.getContainer();
-        Period period = containerPeriod.getPeriod();
 
-        BigDecimal periodNewTotalSpent = period.getTotalSpent().subtract(containerPeriod.getTotalValue());
-        BigDecimal periodNewEconomy = period.getEconomy().add(containerPeriod.getTotalValue());
+        List<ContainerPeriod> containerPeriods = containerPeriodRepository.findByContainer(container);
 
-        period.setTotalSpent(periodNewTotalSpent);
-        period.setEconomy(periodNewEconomy);
+        for (ContainerPeriod cp : containerPeriods){
+            Period period = cp.getPeriod();
+            BigDecimal newTotalSpent = period.getTotalSpent().subtract(cp.getTotalValue());
+            period.setTotalSpent(newTotalSpent);
+            period.setEconomy(period.getValue().subtract(newTotalSpent));
+            period.setContainerCount(period.getContainerCount() - 1);
 
-        containerPeriodRepository.deleteByContainer(container);
+            periodRepository.save(period);
+        }
+
+        containerPeriodRepository.deleteAll(containerPeriods);
         containerRepository.delete(container);
-        periodRepository.save(period);
     }
 
 
