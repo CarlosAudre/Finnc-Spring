@@ -1,7 +1,7 @@
 package com.project.FinnC.period;
 
 import com.project.FinnC.container.*;
-import com.project.FinnC.exeptions.PeriodBalanceInsufficientException;
+import com.project.FinnC.exeptions.InsufficientBalance;
 import com.project.FinnC.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -75,7 +75,7 @@ public class PeriodService {
         Period period = periodRepository.findByUserAndMonthAndYear(user, monthEnum, year)
                 .orElseGet(() -> new Period(dto.value(), monthEnum, year, user));
         if(dto.value().compareTo(period.getTotalSpent()) < 0){
-            throw new PeriodBalanceInsufficientException("O total gasto é maior que o novo saldo inserido");
+            throw new InsufficientBalance("O total gasto é maior que o novo saldo inserido");
         }
         period.setValue(dto.value());
         period.setEconomy(dto.value().subtract(period.getTotalSpent()));

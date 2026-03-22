@@ -1,10 +1,12 @@
 package com.project.FinnC.container;
 
+import com.project.FinnC.expense.ExpenseDto;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
-
-public record  ContainerDto(
+public record ContainerPageDto(
         Long id,
         String title,
         BigDecimal totalValue,
@@ -12,6 +14,8 @@ public record  ContainerDto(
         BigDecimal economy,
         LocalDate startDate,
         LocalDate endDate,
-        ContainerColor color
+        ContainerColor color,
+        List<ExpenseDto> expenseDtos
+
 ) {
 }

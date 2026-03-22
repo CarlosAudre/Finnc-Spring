@@ -1,23 +1,23 @@
-package com.project.FinnC.container;
+package com.project.FinnC.expense;
 
-import com.project.FinnC.user.User;
+import com.project.FinnC.container.Container;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.time.LocalDate;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "container")
-public class Container {
+@Table(name = "expense")
+public class Expense {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,14 +35,11 @@ public class Container {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ContainerColor color = ContainerColor.PURPLE;
-
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "container_fk", nullable = false)
+    private Container container;
 
-    @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true) //With CascadeType.All, when deleted, containerPeriod is also deleted
-    private List<ContainerPeriod> containerPeriods;
+    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ExpenseContainer> expenseContainers;
+
 }

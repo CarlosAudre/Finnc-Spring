@@ -2,7 +2,8 @@ package com.project.FinnC.container;
 
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 
-import com.project.FinnC.exeptions.PeriodBalanceInsufficientException;
+import com.project.FinnC.exeptions.InsufficientBalance;
+import com.project.FinnC.expense.*;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.user.User;
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,9 +25,16 @@ public class ContainerService {
     ContainerPeriodRepository containerPeriodRepository;
     @Autowired
     PeriodRepository periodRepository;
+    @Autowired
+    ExpenseContainerRepository expenseContainerRepository;
+    @Autowired
+    ExpenseRepository expenseRepository;
 
     @Transactional
-    public ContainerDto createContainer(ContainerDto dto, User user, Period currentPeriod) {
+    public ContainerDto createContainer(ContainerDto dto, User user, Month month, int year) {
+
+        Period currentPeriod = periodRepository.findByUserAndMonthAndYear(user,month, year)
+                .orElseThrow(() -> new RuntimeException("Period not found"));
 
         Container container = new Container();
         container.setUser(user);
@@ -39,12 +48,12 @@ public class ContainerService {
         containerPeriod.setPeriod(currentPeriod);
         containerPeriod.setTotalValue(dto.totalValue());
         containerPeriod.setTotalSpent(BigDecimal.ZERO);
-        containerPeriod.setEconomy(dto.Economy());
+        containerPeriod.setEconomy(dto.totalValue());
 
         BigDecimal newTotalSpent = currentPeriod.getTotalSpent().add(dto.totalValue());
 
         if(currentPeriod.getValue().compareTo(newTotalSpent) < 0){
-            throw new PeriodBalanceInsufficientException();
+            throw new InsufficientBalance();
         }
 
         currentPeriod.setTotalSpent(newTotalSpent);
@@ -74,16 +83,7 @@ public class ContainerService {
 
         Period period = containerPeriod.getPeriod();
 
-        if (dto.totalValue().compareTo(containerPeriod.getTotalSpent()) < 0) {
-            throw new RuntimeException("O total gasto do container é maior que o novo valor inserido");
-        }
-
-        if (dto.totalValue().compareTo(period.getValue()) > 0) {
-            throw new RuntimeException("O saldo do período é menor que o novo valor inserido");
-        }
-
-        BigDecimal currentContainerBalance = containerPeriod.getTotalValue();
-        BigDecimal newPeriodTotalSpent = (period.getTotalSpent().subtract(currentContainerBalance)).add(dto.totalValue());
+        BigDecimal newPeriodTotalSpent = getBigDecimal(dto, containerPeriod, period);
         BigDecimal newPeriodEconomy = period.getValue().subtract(newPeriodTotalSpent);
 
         container.setTitle(dto.title());
@@ -95,7 +95,7 @@ public class ContainerService {
         period.setEconomy(newPeriodEconomy);
 
         LocalDate newEndDate = dto.endDate();
-        //Remove containers where date after new endDate
+        //Remove containers where date is after new endDate
         if (newEndDate != null) {
             List<ContainerPeriod> containerPeriods =
                     containerPeriodRepository.findByContainer(container);
@@ -129,6 +129,19 @@ public class ContainerService {
         );
     }
 
+    private static BigDecimal getBigDecimal(ContainerDto dto, ContainerPeriod containerPeriod, Period period) {
+        if (dto.totalValue().compareTo(containerPeriod.getTotalSpent()) < 0) {
+            throw new RuntimeException("O total gasto do container é maior que o novo valor inserido");
+        }
+
+        if (dto.totalValue().compareTo(period.getValue()) > 0) {
+            throw new RuntimeException("O saldo do período é menor que o novo valor inserido");
+        }
+
+        BigDecimal currentContainerBalance = containerPeriod.getTotalValue();
+        return (period.getTotalSpent().subtract(currentContainerBalance)).add(dto.totalValue());
+    }
+
     @Transactional
     public void deleteContainer(Long id){
         ContainerPeriod containerPeriod = containerPeriodRepository.findById(id)
@@ -150,20 +163,53 @@ public class ContainerService {
         containerPeriodRepository.deleteAll(containerPeriods);
         containerRepository.delete(container);
     }
+    
 
-
-    public ContainerDto getContainer(Long id){
+    public ContainerPageDto getContainer(Long id){
         ContainerPeriod containerPeriod = containerPeriodRepository.findById(id)
                 .orElseThrow(ContainerPeriodNotFoundException::new);
-        return new ContainerDto(
+
+        Period period = containerPeriod.getPeriod();
+        LocalDate periodDate = LocalDate.of(period.getYear(), period.getMonth(), 1);
+
+        return processContainer(containerPeriod, periodDate);
+    }
+
+    private ContainerPageDto processContainer(ContainerPeriod containerPeriod, LocalDate periodDate) {
+
+        Container container = containerPeriod.getContainer();
+
+        List<Expense> expenses = expenseRepository.findActiveExpenses(container, periodDate);
+
+        List<ExpenseDto> expenseDtos = expenses.stream()
+                .map(expense -> {
+                    ExpenseContainer ec = expense.getExpenseContainers()
+                            .stream()
+                            .filter(exc -> exc.getContainerPeriod().getId()
+                                    .equals(containerPeriod.getId())) // At this point, I filter the ExpenseContainers where the containerPeriod matches the current containerPeriod. There is actually just one, but I need to get it as a single element.
+                            .findFirst()// Now I get the first element from the filtered list, which I will use to fill the value in the ExpenseDto.
+                            .orElse(null);
+
+                    return new ExpenseDto(
+                            ec != null ? ec.getId() : null,
+                            expense.getTitle(),
+                            ec != null ? ec.getValue() : BigDecimal.ZERO,
+                            expense.getStartDate(),
+                            expense.getEndDate()
+                    );
+                })
+                .toList();
+
+        return new ContainerPageDto(
                 containerPeriod.getId(),
-                containerPeriod.getContainer().getTitle(),
+                container.getTitle(),
                 containerPeriod.getTotalValue(),
                 containerPeriod.getTotalSpent(),
                 containerPeriod.getEconomy(),
-                containerPeriod.getContainer().getStartDate(),
-                containerPeriod.getContainer().getEndDate(),
-                containerPeriod.getContainer().getColor()
+                container.getStartDate(),
+                container.getEndDate(),
+                container.getColor(),
+                expenseDtos
         );
     }
 }

@@ -1,15 +1,16 @@
 package com.project.FinnC.container;
 
+import com.project.FinnC.expense.Expense;
+import com.project.FinnC.expense.ExpenseContainer;
 import com.project.FinnC.period.Period;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.Month;
+import java.util.List;
+
 
 @Getter
 @Setter
@@ -34,14 +35,17 @@ public class ContainerPeriod {
     private BigDecimal totalSpent;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal Economy;
+    private BigDecimal economy;
 
 
     @ManyToOne
-    @JoinColumn(name = "container_fk")
+    @JoinColumn(name = "container_fk", nullable = false)
     Container container;
 
     @ManyToOne
-    @JoinColumn(name = "period_fk")
+    @JoinColumn(name = "period_fk", nullable = false)
     Period period;
+
+    @OneToMany(mappedBy = "containerPeriod", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ExpenseContainer> expenseContainers;
 }

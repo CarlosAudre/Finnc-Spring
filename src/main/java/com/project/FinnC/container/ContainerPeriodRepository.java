@@ -10,6 +10,6 @@ import java.util.Optional;
 public interface ContainerPeriodRepository extends JpaRepository<ContainerPeriod, Long> {
     List<ContainerPeriod> findByPeriod(Period period);
     Boolean existsByContainerAndPeriod(Container container, Period period);
-    void deleteByContainer(Container container);
     List<ContainerPeriod> findByContainer(Container container);
+    Optional<ContainerPeriod> findByContainerAndPeriod(Container container, Period period);
 }

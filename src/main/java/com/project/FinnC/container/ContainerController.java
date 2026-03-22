@@ -1,5 +1,4 @@
 package com.project.FinnC.container;
-import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.user.User;
 import jakarta.validation.Valid;
@@ -29,14 +28,8 @@ public class ContainerController {
             @PathVariable int month
             ){
         Month monthEnum = Month.of(month);
-        Optional<Period> periodOptional = periodRepository.findByUserAndMonthAndYear(user, monthEnum, year);
-        if (periodOptional.isPresent()){
-            Period period = periodOptional.get();
-            ContainerDto containerDto = containerService.createContainer(containerDTO, user, period);
-            return ResponseEntity.ok(containerDto);
-        }
-
-        return ResponseEntity.notFound().build();
+        ContainerDto containerDto = containerService.createContainer(containerDTO, user, monthEnum, year);
+        return ResponseEntity.ok(containerDto);
     }
 
     @PutMapping("/{id}")
@@ -55,8 +48,8 @@ public class ContainerController {
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<ContainerDto> getContainer(@PathVariable Long id){
-        ContainerDto containerDto = containerService.getContainer(id);
-        return ResponseEntity.ok(containerDto);
+    public ResponseEntity<ContainerPageDto> getContainer(@PathVariable Long id){
+        ContainerPageDto containerPageDto = containerService.getContainer(id);
+        return ResponseEntity.ok(containerPageDto);
     }
 }

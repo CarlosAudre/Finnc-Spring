@@ -2,7 +2,8 @@ package com.project.FinnC.infra_security;
 
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 import com.project.FinnC.exeptions.EmailAlreadyExistsException;
-import com.project.FinnC.exeptions.PeriodBalanceInsufficientException;
+import com.project.FinnC.exeptions.ExpenseContainerNotFoundException;
+import com.project.FinnC.exeptions.InsufficientBalance;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -18,14 +19,20 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    @ExceptionHandler(PeriodBalanceInsufficientException.class)
-    private ResponseEntity<RestErrorMessage> PeriodBalanceInsufficientHandler(PeriodBalanceInsufficientException exception){
+    @ExceptionHandler(InsufficientBalance.class)
+    private ResponseEntity<RestErrorMessage> PeriodBalanceInsufficientHandler(InsufficientBalance exception){
         RestErrorMessage response = new RestErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
     }
 
     @ExceptionHandler(ContainerPeriodNotFoundException.class)
     private ResponseEntity<RestErrorMessage> containerPeriodNotFoundHandler(ContainerPeriodNotFoundException exception){
+        RestErrorMessage response = new RestErrorMessage(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+
+    @ExceptionHandler(ExpenseContainerNotFoundException.class)
+    private ResponseEntity<RestErrorMessage> ExpenseContainerNotFoundHandler(ExpenseContainerNotFoundException exception){
         RestErrorMessage response = new RestErrorMessage(HttpStatus.NOT_FOUND, exception.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
