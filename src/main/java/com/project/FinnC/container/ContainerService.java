@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class ContainerService {
@@ -189,15 +190,16 @@ public class ContainerService {
                                     .equals(containerPeriod.getId())) // At this point, I filter the ExpenseContainers where the containerPeriod matches the current containerPeriod. There is actually just one, but I need to get it as a single element.
                             .findFirst()// Now I get the first element from the filtered list, which I will use to fill the value in the ExpenseDto.
                             .orElse(null);
-
+                    if (ec == null) return null;
                     return new ExpenseDto(
-                            ec != null ? ec.getId() : null,
+                            ec.getId(),
                             expense.getTitle(),
-                            ec != null ? ec.getValue() : BigDecimal.ZERO,
+                            ec.getValue(),
                             expense.getStartDate(),
                             expense.getEndDate()
                     );
                 })
+                .filter(Objects::nonNull)
                 .toList();
 
         return new ContainerPageDto(
