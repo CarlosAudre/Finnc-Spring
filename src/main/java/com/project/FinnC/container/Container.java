@@ -1,5 +1,6 @@
 package com.project.FinnC.container;
 
+import com.project.FinnC.expense.Expense;
 import com.project.FinnC.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -45,4 +46,7 @@ public class Container {
 
     @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true) //With CascadeType.All, when deleted, containerPeriod is also deleted
     private List<ContainerPeriod> containerPeriods;
+
+    @OneToMany(mappedBy = "container", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Expense> expenses;
 }

@@ -39,7 +39,7 @@ public class Expense {
     @JoinColumn(name = "container_fk", nullable = false)
     private Container container;
 
-    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ExpenseContainer> expenseContainers;
 
 }

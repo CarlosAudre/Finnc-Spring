@@ -2,7 +2,7 @@ package com.project.FinnC.container;
 
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 
-import com.project.FinnC.exeptions.InsufficientBalance;
+import com.project.FinnC.exeptions.InsufficientBalanceException;
 import com.project.FinnC.expense.*;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
@@ -27,12 +27,14 @@ public class ContainerService {
     @Autowired
     PeriodRepository periodRepository;
     @Autowired
-    ExpenseContainerRepository expenseContainerRepository;
-    @Autowired
     ExpenseRepository expenseRepository;
 
     @Transactional
     public ContainerDto createContainer(ContainerDto dto, User user, Month month, int year) {
+
+        if (dto.endDate().isBefore(dto.startDate())){
+            throw new RuntimeException("A data de fim não pode ser antes da data de inicio");
+        }
 
         Period currentPeriod = periodRepository.findByUserAndMonthAndYear(user,month, year)
                 .orElseThrow(() -> new RuntimeException("Period not found"));
@@ -54,7 +56,7 @@ public class ContainerService {
         BigDecimal newTotalSpent = currentPeriod.getTotalSpent().add(dto.totalValue());
 
         if(currentPeriod.getValue().compareTo(newTotalSpent) < 0){
-            throw new InsufficientBalance();
+            throw new InsufficientBalanceException();
         }
 
         currentPeriod.setTotalSpent(newTotalSpent);
@@ -82,10 +84,21 @@ public class ContainerService {
 
         Container container = containerPeriod.getContainer();
 
+        if(dto.endDate().isBefore(container.getStartDate())){
+            throw new RuntimeException(("A data de fim não pode ser anterior à data de início."));
+        }
+
         Period period = containerPeriod.getPeriod();
 
         BigDecimal newPeriodTotalSpent = getBigDecimal(dto, containerPeriod, period);
         BigDecimal newPeriodEconomy = period.getValue().subtract(newPeriodTotalSpent);
+
+        List<Expense> expenses = container.getExpenses();
+        for(Expense expense : expenses){
+            if (expense.getEndDate().isAfter(dto.endDate())){
+                throw new RuntimeException("Redução de data inválida: existe despesa conflitante.");
+            }
+        }
 
         container.setTitle(dto.title());
         container.setEndDate(dto.endDate());
@@ -109,6 +122,10 @@ public class ContainerService {
                 if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod
                         periodDate.isAfter(newEndDate)) {
                     toDelete.add(cp);
+                    p.setTotalSpent(p.getTotalSpent().subtract(cp.getTotalValue()));
+                    p.setEconomy(p.getValue().subtract(p.getTotalSpent()));
+                    p.setContainerCount(p.getContainerCount() - 1);
+                    periodRepository.save(p);
                 }
             }
             containerPeriodRepository.deleteAll(toDelete);

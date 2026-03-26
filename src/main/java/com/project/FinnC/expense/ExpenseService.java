@@ -5,9 +5,10 @@ import com.project.FinnC.container.ContainerPeriod;
 import com.project.FinnC.container.ContainerPeriodRepository;
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 import com.project.FinnC.exeptions.ExpenseContainerNotFoundException;
-import com.project.FinnC.exeptions.InsufficientBalance;
+import com.project.FinnC.exeptions.InsufficientBalanceException;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
+import com.project.FinnC.period.PeriodService;
 import com.project.FinnC.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
-import java.util.Optional;
+
 
 @Service
 public class ExpenseService {
@@ -29,11 +30,20 @@ public class ExpenseService {
     ExpenseContainerRepository expenseContainerRepository;
     @Autowired
     PeriodRepository periodRepository;
+    @Autowired
+    PeriodService periodService;
 
     @Transactional
     public ExpenseDto createExpense(ExpenseDto expenseDto, Long id) {
         ContainerPeriod containerPeriod = containerPeriodRepository.findById(id)
                 .orElseThrow(ContainerPeriodNotFoundException::new);
+
+        Container container = containerPeriod.getContainer();
+
+        if (expenseDto.endDate().isBefore(container.getStartDate())
+                || expenseDto.endDate().isAfter(container.getEndDate())) {
+            throw new RuntimeException("Data fora do período do container");
+        }
 
         Expense expense = new Expense();
         expense.setTitle(expenseDto.title());
@@ -48,16 +58,19 @@ public class ExpenseService {
         ExpenseContainer currentEc = null;
 
         while (!currendDate.isAfter(endDate)) {
-            Month month = currendDate.getMonth();
+            int month = currendDate.getMonthValue();
             int year = currendDate.getYear();
             User user = containerPeriod.getContainer().getUser();
-            Container container = containerPeriod.getContainer();
-            Period period = periodRepository.findByUserAndMonthAndYear(user, month, year)
-                    .orElseThrow(ContainerPeriodNotFoundException::new);
+
+            Period period = periodService.createOrGetPeriod(user, year, month);
 
             ContainerPeriod cp = containerPeriodRepository.findByContainerAndPeriod(
                             container, period).
                     orElseThrow();
+
+            if (expenseDto.value().compareTo(cp.getEconomy()) > 0) {
+                throw new RuntimeException("O valor da despesa é maior que o limite disponível");
+            }
 
             ExpenseContainer expenseContainer = new ExpenseContainer();
             expenseContainer.setContainerPeriod(cp);
@@ -65,24 +78,18 @@ public class ExpenseService {
             expenseContainer.setValue(expenseDto.value());
             expenseContainerRepository.save(expenseContainer);
 
+            BigDecimal totalSpent = expenseContainerRepository.sumByContainerPeriod(cp);
+
+            cp.setTotalSpent(totalSpent);
+            cp.setEconomy(cp.getTotalValue().subtract(totalSpent));
+            containerPeriodRepository.save(cp);
+
             if (cp.getId().equals(containerPeriod.getId())) {
                 currentEc = expenseContainer;
             }
 
             currendDate = currendDate.plusMonths(1); //one month ahead
         }
-
-        if (expenseDto.value().compareTo(containerPeriod.getEconomy()) > 0) {
-            throw new RuntimeException("O valor da despesa é maior que o limite disponível");
-        }
-
-        BigDecimal newContainerTotalSpent = containerPeriod.getTotalSpent().add(expenseDto.value());
-        BigDecimal newContainerEconomy = containerPeriod.getTotalValue().subtract(newContainerTotalSpent);
-
-        containerPeriod.setTotalSpent(newContainerTotalSpent);
-        containerPeriod.setEconomy(newContainerEconomy);
-
-        containerPeriodRepository.save(containerPeriod);
 
         return new ExpenseDto(
                 currentEc != null ? currentEc.getId() : null,
@@ -99,77 +106,94 @@ public class ExpenseService {
         ExpenseContainer expenseContainer = expenseContainerRepository.findById(id)
                 .orElseThrow(ExpenseContainerNotFoundException::new);
 
-        ContainerPeriod containerPeriod = expenseContainer.getContainerPeriod();
-        Container container = containerPeriod.getContainer();
+        Container container = expenseContainer.getContainerPeriod().getContainer();
+
+        if (expenseDto.endDate().isBefore(container.getStartDate())
+                || expenseDto.endDate().isAfter(container.getEndDate())) {
+            throw new RuntimeException("Data fora do período do container");
+        }
+
         Expense expense = expenseContainer.getExpense();
 
-        LocalDate oldEndDate = expense.getEndDate();
-        LocalDate newEndDate = expenseDto.endDate();
+        User user = container.getUser();
 
-        if (expenseDto.value().compareTo(containerPeriod.getEconomy()) > 0) {
-            throw new InsufficientBalance("O limite do container é inferior ao valor inserido");
-        }
         BigDecimal oldValue = expenseContainer.getValue();
+        BigDecimal newValue = expenseDto.value();
+
+        ContainerPeriod currentCp = expenseContainer.getContainerPeriod();
+
+        BigDecimal available = currentCp.getEconomy().add(oldValue);
+
+        if (newValue.compareTo(available) > 0) {
+            throw new InsufficientBalanceException("O limite do container é inferior ao valor inserido");
+        }
 
         expense.setTitle(expenseDto.title());
-        expense.setEndDate(newEndDate);
-        expenseContainer.setValue(expenseDto.value());
+        expense.setEndDate(expenseDto.endDate());
 
-        BigDecimal newTotalSpent =
-                containerPeriod.getTotalSpent()
-                        .add(expenseDto.value())
-                        .subtract(oldValue);
+        LocalDate startDate = expense.getStartDate();
+        LocalDate endDate = expense.getEndDate();
 
-        containerPeriod.setTotalSpent(newTotalSpent);
-        containerPeriod.setEconomy(
-                containerPeriod.getTotalValue().subtract(newTotalSpent)
-        );
-
-        List<ExpenseContainer> expenseContainers =
+        List<ExpenseContainer> existingECs =
                 expenseContainerRepository.findByExpense(expense);
 
-        for (ExpenseContainer ec : expenseContainers) {
+        for (ExpenseContainer ec : existingECs) {
             if (!isValid(expenseDto, ec)) {
+                ContainerPeriod cp = ec.getContainerPeriod();
                 expenseContainerRepository.delete(ec);
+
+                BigDecimal totalSpent = expenseContainerRepository
+                        .sumByContainerPeriod(cp);
+
+                cp.setTotalSpent(totalSpent);
+                cp.setEconomy(cp.getTotalValue().subtract(totalSpent));
+
+                containerPeriodRepository.save(cp);
             }
         }
-        if (newEndDate.isAfter(oldEndDate)) {
-            LocalDate currentDate = oldEndDate.plusMonths(1);
-            User user = container.getUser();
+        LocalDate currentDate = startDate;
 
-            while (!currentDate.isAfter(newEndDate)) {
-                Month month = currentDate.getMonth();
-                int year = currentDate.getYear();
+        while (!currentDate.isAfter(endDate)) {
+            int month = currentDate.getMonthValue();
+            int year = currentDate.getYear();
 
-                Period period = periodRepository
-                        .findByUserAndMonthAndYear(user, month, year)
-                        .orElseThrow(ContainerPeriodNotFoundException::new);
+            Period period = periodService.createOrGetPeriod(user, year, month);
 
-                ContainerPeriod cp = containerPeriodRepository
-                        .findByContainerAndPeriod(container, period)
-                        .orElseThrow();
+            ContainerPeriod cp = containerPeriodRepository
+                    .findByContainerAndPeriod(container, period)
+                    .orElseThrow();
 
-                boolean exists = expenseContainerRepository
-                        .existsByExpenseAndContainerPeriod(expense, cp);
+            boolean exists = expenseContainerRepository
+                    .existsByExpenseAndContainerPeriod(expense, cp);
 
-                if (!exists) {
-                    ExpenseContainer newEc = new ExpenseContainer();
-                    newEc.setContainerPeriod(cp);
-                    newEc.setExpense(expense);
-                    newEc.setValue(expenseDto.value());
-                    expenseContainerRepository.save(newEc);
-                }
-                currentDate = currentDate.plusMonths(1);
+            if (!exists) {
+                ExpenseContainer newEc = new ExpenseContainer();
+                newEc.setExpense(expense);
+                newEc.setContainerPeriod(cp);
+                newEc.setValue(newValue);
+                expenseContainerRepository.save(newEc);
             }
+            currentDate = currentDate.plusMonths(1);
         }
-        expenseRepository.save(expense);
+
+        expenseContainer.setValue(newValue);
         expenseContainerRepository.save(expenseContainer);
-        containerPeriodRepository.save(containerPeriod);
+
+        BigDecimal totalSpent = expenseContainerRepository
+                .sumByContainerPeriod(currentCp);
+
+        currentCp.setTotalSpent(totalSpent);
+        currentCp.setEconomy(
+                currentCp.getTotalValue().subtract(totalSpent)
+        );
+
+        containerPeriodRepository.save(currentCp);
+        expenseRepository.save(expense);
 
         return new ExpenseDto(
                 expenseContainer.getId(),
                 expense.getTitle(),
-                expenseContainer.getValue(),
+                newValue,
                 expense.getStartDate(),
                 expense.getEndDate()
         );

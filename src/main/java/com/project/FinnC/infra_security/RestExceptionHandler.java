@@ -3,7 +3,7 @@ package com.project.FinnC.infra_security;
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 import com.project.FinnC.exeptions.EmailAlreadyExistsException;
 import com.project.FinnC.exeptions.ExpenseContainerNotFoundException;
-import com.project.FinnC.exeptions.InsufficientBalance;
+import com.project.FinnC.exeptions.InsufficientBalanceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -19,8 +19,8 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    @ExceptionHandler(InsufficientBalance.class)
-    private ResponseEntity<RestErrorMessage> PeriodBalanceInsufficientHandler(InsufficientBalance exception){
+    @ExceptionHandler(InsufficientBalanceException.class)
+    private ResponseEntity<RestErrorMessage> PeriodBalanceInsufficientHandler(InsufficientBalanceException exception){
         RestErrorMessage response = new RestErrorMessage(HttpStatus.UNPROCESSABLE_ENTITY, exception.getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
     }

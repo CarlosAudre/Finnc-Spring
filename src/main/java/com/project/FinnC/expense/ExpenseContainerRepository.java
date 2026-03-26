@@ -2,7 +2,11 @@ package com.project.FinnC.expense;
 
 import com.project.FinnC.container.ContainerPeriod;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -12,4 +16,11 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
     List<ExpenseContainer> findByExpense(Expense expense);
     Boolean existsByExpense(Expense expense);
     Boolean existsByExpenseAndContainerPeriod(Expense expense, ContainerPeriod containerPeriod);
+
+    @Query("""
+    SELECT COALESCE(SUM(ec.value), 0)
+    FROM ExpenseContainer ec
+    WHERE ec.containerPeriod = :cp
+""")
+    BigDecimal sumByContainerPeriod(@Param("cp") ContainerPeriod cp);
 }
