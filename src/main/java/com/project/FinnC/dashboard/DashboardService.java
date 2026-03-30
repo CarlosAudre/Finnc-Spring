@@ -1,5 +1,6 @@
 package com.project.FinnC.dashboard;
 
+import com.project.FinnC.container.ContainerPeriodRepository;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,8 @@ import java.util.stream.Collectors;
 public class DashboardService {
     @Autowired
     PeriodRepository periodRepository;
+    @Autowired
+    ContainerPeriodRepository containerPeriodRepository;
 
     public SummaryDto getSummary(int year, int month, User user){
         BigDecimal totalReceived = periodRepository.sumTotalValueByYear(year, user.getId());
@@ -52,7 +55,7 @@ public class DashboardService {
                 .setScale(1, RoundingMode.HALF_UP);
     }
 
-    public List<DashMonthDto> getOverviewChartDate(User user, int year) {
+    public List<DashMonthDto> getMonthChartDate(User user, int year) {
         List<DashMonthDto> result = periodRepository.findDashboardByYear(user, year);
 
         Map<Month, DashMonthDto> map = result.stream()
@@ -72,5 +75,9 @@ public class DashboardService {
             ));
         }
         return finalList;
+    }
+
+    public List<DashboardCategoriesDto> getCategoriesChartDate(int year){
+        return containerPeriodRepository.findDashboardCategoriesByYear(year);
     }
 }

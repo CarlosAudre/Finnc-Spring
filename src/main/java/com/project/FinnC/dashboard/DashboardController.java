@@ -28,7 +28,15 @@ public class DashboardController {
     @GetMapping("/overview")
     public ResponseEntity<List<DashMonthDto>> getOverviewChartDate(@AuthenticationPrincipal User user,
                                                                    @PathVariable int year){
-        List<DashMonthDto> dashMonthDtos = dashboardService.getOverviewChartDate(user, year);
+        List<DashMonthDto> dashMonthDtos = dashboardService.getMonthChartDate(user, year);
         return ResponseEntity.ok(dashMonthDtos);
     }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<DashboardCategoriesDto>> getCategoriesChartDate(
+            @PathVariable int year){
+        List<DashboardCategoriesDto> dashboardCategoriesDtos = dashboardService.getCategoriesChartDate(year);
+        return ResponseEntity.ok(dashboardCategoriesDtos);
+    }
+
 }
