@@ -28,6 +28,8 @@ public class ContainerService {
     PeriodRepository periodRepository;
     @Autowired
     ExpenseRepository expenseRepository;
+    @Autowired
+    ExpenseContainerRepository expenseContainerRepository;
 
     @Transactional
     public ContainerDto createContainer(ContainerDto dto, User user, Month month, int year) {
@@ -53,14 +55,14 @@ public class ContainerService {
         containerPeriod.setTotalSpent(BigDecimal.ZERO);
         containerPeriod.setEconomy(dto.totalValue());
 
-        BigDecimal newTotalSpent = currentPeriod.getTotalSpent().add(dto.totalValue());
+        BigDecimal newTotalSpent = currentPeriod.getContainerTotalSpent().add(dto.totalValue());
 
         if(currentPeriod.getValue().compareTo(newTotalSpent) < 0){
             throw new InsufficientBalanceException();
         }
 
-        currentPeriod.setTotalSpent(newTotalSpent);
-        currentPeriod.setEconomy(currentPeriod.getValue().subtract(newTotalSpent));
+        currentPeriod.setContainerTotalSpent(newTotalSpent);
+        currentPeriod.setContainerEconomy(currentPeriod.getValue().subtract(newTotalSpent));
         currentPeriod.setContainerCount(currentPeriod.getContainerCount() + 1);
 
         containerRepository.save(container);
@@ -99,37 +101,34 @@ public class ContainerService {
                 throw new RuntimeException("Redução de data inválida: existe despesa conflitante.");
             }
         }
-
         container.setTitle(dto.title());
         container.setEndDate(dto.endDate());
         container.setColor(dto.color());
         containerPeriod.setTotalValue(dto.totalValue());
         containerPeriod.setEconomy(dto.totalValue().subtract(containerPeriod.getTotalSpent()));
-        period.setTotalSpent(newPeriodTotalSpent);
-        period.setEconomy(newPeriodEconomy);
+        period.setContainerTotalSpent(newPeriodTotalSpent);
+        period.setContainerEconomy(newPeriodEconomy);
 
         LocalDate newEndDate = dto.endDate();
         //Remove containers where date is after new endDate
-        if (newEndDate != null) {
-            List<ContainerPeriod> containerPeriods =
-                    containerPeriodRepository.findByContainer(container);
+        List<ContainerPeriod> containerPeriods =
+                containerPeriodRepository.findByContainer(container);
 
-            List<ContainerPeriod> toDelete = new ArrayList<>(); //<-- All containers where date is after new endDate
+        List<ContainerPeriod> toDelete = new ArrayList<>(); //<-- All containers where date is after new endDate
 
-            for (ContainerPeriod cp : containerPeriods) {
-                Period p = cp.getPeriod();
-                LocalDate periodDate = LocalDate.of(p.getYear(), p.getMonth().getValue(), 1); //Transform Year and month to localDate
-                if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod
-                        periodDate.isAfter(newEndDate)) {
-                    toDelete.add(cp);
-                    p.setTotalSpent(p.getTotalSpent().subtract(cp.getTotalValue()));
-                    p.setEconomy(p.getValue().subtract(p.getTotalSpent()));
-                    p.setContainerCount(p.getContainerCount() - 1);
-                    periodRepository.save(p);
-                }
+        for (ContainerPeriod cp : containerPeriods) {
+            Period p = cp.getPeriod();
+            LocalDate periodDate = LocalDate.of(p.getYear(), p.getMonth().getValue(), 1); //Transform Year and month to localDate
+            if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod
+                    periodDate.isAfter(newEndDate)) {
+                toDelete.add(cp);
+                p.setContainerTotalSpent(p.getContainerTotalSpent().subtract(cp.getTotalValue()));
+                p.setContainerEconomy(p.getValue().subtract(p.getContainerTotalSpent()));
+                p.setContainerCount(p.getContainerCount() - 1);
+                periodRepository.save(p);
             }
-            containerPeriodRepository.deleteAll(toDelete);
         }
+        containerPeriodRepository.deleteAll(toDelete);
 
         containerPeriodRepository.save(containerPeriod);
         containerRepository.save(container);
@@ -157,7 +156,7 @@ public class ContainerService {
         }
 
         BigDecimal currentContainerBalance = containerPeriod.getTotalValue();
-        return (period.getTotalSpent().subtract(currentContainerBalance)).add(dto.totalValue());
+        return (period.getContainerTotalSpent().subtract(currentContainerBalance)).add(dto.totalValue());
     }
 
     @Transactional
@@ -168,11 +167,30 @@ public class ContainerService {
 
         List<ContainerPeriod> containerPeriods = containerPeriodRepository.findByContainer(container);
 
-        for (ContainerPeriod cp : containerPeriods){
+        for (ContainerPeriod cp : containerPeriods) {
             Period period = cp.getPeriod();
-            BigDecimal newTotalSpent = period.getTotalSpent().subtract(cp.getTotalValue());
-            period.setTotalSpent(newTotalSpent);
-            period.setEconomy(period.getValue().subtract(newTotalSpent));
+
+            BigDecimal expenseValueToRemove =
+                    expenseContainerRepository.sumByContainerPeriod(cp);
+
+            BigDecimal containerValueToRemove = containerPeriodRepository.sumContainerByContainerAndPeriod(container, period);
+
+            period.setExpenseTotalSpent(
+                    period.getExpenseTotalSpent().subtract(expenseValueToRemove)
+            );
+
+            period.setContainerTotalSpent(
+                    period.getContainerTotalSpent().subtract(containerValueToRemove)
+            );
+
+            period.setExpenseEconomy(
+                    period.getValue().subtract(period.getExpenseTotalSpent())
+            );
+
+            period.setContainerEconomy(
+                    period.getValue().subtract(period.getContainerTotalSpent())
+            );
+
             period.setContainerCount(period.getContainerCount() - 1);
 
             periodRepository.save(period);

@@ -1,6 +1,8 @@
 package com.project.FinnC.expense;
 
 import com.project.FinnC.container.ContainerPeriod;
+import com.project.FinnC.period.Period;
+import com.project.FinnC.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,4 +25,11 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
     WHERE ec.containerPeriod = :cp
 """)
     BigDecimal sumByContainerPeriod(@Param("cp") ContainerPeriod cp);
+
+    @Query("""
+    SELECT COALESCE(SUM(ec.value), 0)
+    FROM ExpenseContainer ec
+    WHERE ec.containerPeriod.period = :period
+""")
+    BigDecimal sumByPeriod(@Param("period") Period period);
 }

@@ -9,8 +9,10 @@ public record PeriodDto(
         int year,
         int month,
         BigDecimal value,
-        BigDecimal totalSpent,
-        BigDecimal economy,
+        BigDecimal containerTotalSpent,
+        BigDecimal expenseTotalSpent,
+        BigDecimal containerEconomy,
+        BigDecimal expenseEconomy,
         int containerCount,
         List<ContainerDto> containerDtos
 ) {

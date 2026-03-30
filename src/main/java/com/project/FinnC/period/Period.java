@@ -30,10 +30,16 @@ public class Period {
     private BigDecimal value;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal totalSpent;
+    private BigDecimal containerTotalSpent;
 
     @Column(precision = 10, scale = 2)
-    private BigDecimal Economy;
+    private BigDecimal expenseTotalSpent;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal containerEconomy;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal expenseEconomy;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
