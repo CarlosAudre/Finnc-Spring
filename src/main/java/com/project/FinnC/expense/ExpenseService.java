@@ -6,11 +6,14 @@ import com.project.FinnC.container.ContainerPeriodRepository;
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 import com.project.FinnC.exeptions.ExpenseContainerNotFoundException;
 import com.project.FinnC.exeptions.InsufficientBalanceException;
+import com.project.FinnC.home.LastExpensesDto;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.period.PeriodService;
 import com.project.FinnC.user.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -280,5 +283,10 @@ public class ExpenseService {
         if (!hasMore) {
             expenseRepository.delete(expense);
         }
+    }
+
+    public List<LastExpensesDto> getLastExpensesDtos(int year, Month month){
+        Pageable pageable = PageRequest.of(0, 5);
+        return expenseContainerRepository.findLastExpenses(year, month, pageable);
     }
 }

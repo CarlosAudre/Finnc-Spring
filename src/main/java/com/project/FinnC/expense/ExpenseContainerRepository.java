@@ -1,14 +1,17 @@
 package com.project.FinnC.expense;
 
 import com.project.FinnC.container.ContainerPeriod;
+import com.project.FinnC.home.LastExpensesDto;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,4 +35,17 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
     WHERE ec.containerPeriod.period = :period
 """)
     BigDecimal sumByPeriod(@Param("period") Period period);
+
+    @Query("""
+            SELECT NEW com.project.FinnC.home.LastExpensesDto
+            (cp.id, e.title, c.title, ec.value)
+            FROM ExpenseContainer ec
+            JOIN ec.expense e
+            JOIN ec.containerPeriod cp
+            JOIN cp.container c
+            WHERE cp.period.year = :year
+            AND cp.period.month = :month
+            ORDER BY e.createdAt DESC
+            """)
+    List<LastExpensesDto> findLastExpenses(int year, Month month,  Pageable pageable);
 }

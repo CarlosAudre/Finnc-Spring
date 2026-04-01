@@ -1,15 +1,16 @@
 package com.project.FinnC.container;
 
 import com.project.FinnC.dashboard.DashboardCategoriesDto;
+import com.project.FinnC.home.MostExpensivesContainersDto;
 import com.project.FinnC.period.Period;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.Month;
 import java.util.List;
 import java.util.Optional;
-import java.util.List;
 
 @Repository
 public interface ContainerPeriodRepository extends JpaRepository<ContainerPeriod, Long> {
@@ -35,5 +36,17 @@ public interface ContainerPeriodRepository extends JpaRepository<ContainerPeriod
             GROUP BY c.title
             """)
     List<DashboardCategoriesDto> findDashboardCategoriesByYear(int year);
+
+
+    @Query("""
+            SELECT NEW com.project.FinnC.home.MostExpensivesContainersDto
+            (cp.id, c.title, cp.totalSpent, cp.totalValue, c.color)
+            FROM ContainerPeriod cp
+            JOIN cp.container c
+            WHERE cp.period.year = :year 
+            AND cp.period.month = :month
+            ORDER BY cp.totalSpent DESC
+            """)
+    List<MostExpensivesContainersDto> findMostExpensivesContainers(int year, Month month);
 
 }

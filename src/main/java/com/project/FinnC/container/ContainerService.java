@@ -4,6 +4,7 @@ import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 
 import com.project.FinnC.exeptions.InsufficientBalanceException;
 import com.project.FinnC.expense.*;
+import com.project.FinnC.home.MostExpensivesContainersDto;
 import com.project.FinnC.period.Period;
 import com.project.FinnC.period.PeriodRepository;
 import com.project.FinnC.user.User;
@@ -248,5 +249,9 @@ public class ContainerService {
                 container.getColor(),
                 expenseDtos
         );
+    }
+
+    public List<MostExpensivesContainersDto> getMostExpensivesContainers(int year, Month month){
+        return containerPeriodRepository.findMostExpensivesContainers(year, month);
     }
 }
