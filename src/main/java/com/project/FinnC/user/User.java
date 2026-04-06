@@ -31,6 +31,8 @@ public class User implements UserDetails {
     private String phoneNumber;
     @Enumerated(EnumType.STRING) //Muda de enumerado para String    
     private UserRole role;
+    @Column(columnDefinition = "TEXT")
+    private String imgUrl;
 
 
 

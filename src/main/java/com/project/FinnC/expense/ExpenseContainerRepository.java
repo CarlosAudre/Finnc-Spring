@@ -38,7 +38,7 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
 
     @Query("""
             SELECT NEW com.project.FinnC.home.LastExpensesDto
-            (cp.id, e.title, c.title, ec.value)
+            (cp.id, e.title, c.title, c.color, ec.value)
             FROM ExpenseContainer ec
             JOIN ec.expense e
             JOIN ec.containerPeriod cp

@@ -12,6 +12,7 @@ public record ContainerPageDto(
         BigDecimal totalValue,
         BigDecimal totalSpent,
         BigDecimal economy,
+        BigDecimal periodContainerEconomy,
         LocalDate startDate,
         LocalDate endDate,
         ContainerColor color,

@@ -118,6 +118,14 @@ public class ExpenseService {
 
         Container container = expenseContainer.getContainerPeriod().getContainer();
 
+        Period currentPeriod = expenseContainer.getContainerPeriod().getPeriod();
+        LocalDate currentPeriodDate = LocalDate.of(currentPeriod.getYear(), currentPeriod.getMonth().getValue(), 1);
+        if (currentPeriodDate.isAfter(expenseDto.endDate())) {
+            throw new RuntimeException(
+                    "Não é possível definir uma data final anterior ao período atual."
+            );
+        }
+
         // Validate if new date is within container range
         if (expenseDto.endDate().isBefore(container.getStartDate())
                 || expenseDto.endDate().isAfter(container.getEndDate())) {

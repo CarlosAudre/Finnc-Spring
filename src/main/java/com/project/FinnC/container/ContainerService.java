@@ -93,6 +93,13 @@ public class ContainerService {
 
         Period period = containerPeriod.getPeriod();
 
+        LocalDate currentPeriodDate = LocalDate.of(period.getYear(), period.getMonth().getValue(), 1);
+        if (currentPeriodDate.isAfter(dto.endDate())) {
+            throw new RuntimeException(
+                    "Não é possível definir uma data final anterior ao período atual."
+            );
+        }
+
         BigDecimal newPeriodTotalSpent = getBigDecimal(dto, containerPeriod, period);
         BigDecimal newPeriodEconomy = period.getValue().subtract(newPeriodTotalSpent);
 
@@ -102,6 +109,7 @@ public class ContainerService {
                 throw new RuntimeException("Redução de data inválida: existe despesa conflitante.");
             }
         }
+
         container.setTitle(dto.title());
         container.setEndDate(dto.endDate());
         container.setColor(dto.color());
@@ -120,6 +128,7 @@ public class ContainerService {
         for (ContainerPeriod cp : containerPeriods) {
             Period p = cp.getPeriod();
             LocalDate periodDate = LocalDate.of(p.getYear(), p.getMonth().getValue(), 1); //Transform Year and month to localDate
+
             if (!cp.getId().equals(containerPeriod.getId()) && //If is different from currentContainerPeriod
                     periodDate.isAfter(newEndDate)) {
                 toDelete.add(cp);
@@ -244,6 +253,7 @@ public class ContainerService {
                 containerPeriod.getTotalValue(),
                 containerPeriod.getTotalSpent(),
                 containerPeriod.getEconomy(),
+                containerPeriod.getPeriod().getContainerEconomy(),
                 container.getStartDate(),
                 container.getEndDate(),
                 container.getColor(),
