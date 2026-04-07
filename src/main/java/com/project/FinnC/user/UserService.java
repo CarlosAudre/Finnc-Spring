@@ -7,6 +7,13 @@ import com.project.FinnC.infra_security.MessageResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.Files;
+
+import java.io.IOException;
+import java.util.UUID;
 
 @Service
 public class UserService {
@@ -35,11 +42,26 @@ public class UserService {
         return new EmailResponseDto(dto.email());
     }
 
-    public UserPhotoDto changeUserPhoto(UserPhotoDto dto, User user){
-        user.setImgUrl(dto.photo());
+    public String changeUserPhoto(MultipartFile file, User user, String baseUrl) throws IOException {
+
+        String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+
+        Path uploadPath = Paths.get("uploads");
+
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        Path filePath = uploadPath.resolve(fileName);
+        Files.write(filePath, file.getBytes());
+
+        String imgUrl = baseUrl + "/uploads/" + fileName;
+
+        user.setImgUrl(imgUrl);
         userRepository.save(user);
-        return new UserPhotoDto(dto.photo());
-    };
+
+        return imgUrl;
+    }
 
     public MessageResponseDto changeUserPassword(UserPasswordDto dto, User user){
         if(!passwordEncoder.matches(dto.currentPassword(), user.getPassword())){

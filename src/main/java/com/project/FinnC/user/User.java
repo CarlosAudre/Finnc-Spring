@@ -6,10 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -24,17 +26,20 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    @Column(nullable = false)
     private String name;
     @Column(unique = true)
     private String email;
+    @Column(nullable = false)
     private String password;
     private String phoneNumber;
-    @Enumerated(EnumType.STRING) //Muda de enumerado para String    
+    @Enumerated(EnumType.STRING)
     private UserRole role;
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 500)
     private String imgUrl;
-
-
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
 
     public User(String email, String password) {
@@ -48,10 +53,6 @@ public class User implements UserDetails {
         this.password = password;
         this.role = role;
     }
-
-
-
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

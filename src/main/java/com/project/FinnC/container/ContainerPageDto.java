@@ -4,6 +4,7 @@ import com.project.FinnC.expense.ExpenseDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record ContainerPageDto(
@@ -15,6 +16,7 @@ public record ContainerPageDto(
         BigDecimal periodContainerEconomy,
         LocalDate startDate,
         LocalDate endDate,
+        LocalDateTime createdAt,
         ContainerColor color,
         List<ExpenseDto> expenseDtos
 

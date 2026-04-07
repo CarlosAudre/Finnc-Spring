@@ -106,7 +106,8 @@ public class ExpenseService {
                 expense.getTitle(),
                 expenseDto.value(),
                 expense.getStartDate(),
-                expense.getEndDate()
+                expense.getEndDate(),
+                expense.getCreatedAt()
         );
     }
 
@@ -242,7 +243,8 @@ public class ExpenseService {
                 expense.getTitle(),
                 newValue,
                 expense.getStartDate(),
-                expense.getEndDate()
+                expense.getEndDate(),
+                expense.getCreatedAt()
         );
     }
 

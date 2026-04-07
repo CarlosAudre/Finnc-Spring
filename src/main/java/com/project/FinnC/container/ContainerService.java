@@ -241,7 +241,8 @@ public class ContainerService {
                             expense.getTitle(),
                             ec.getValue(),
                             expense.getStartDate(),
-                            expense.getEndDate()
+                            expense.getEndDate(),
+                            expense.getCreatedAt()
                     );
                 })
                 .filter(Objects::nonNull)
@@ -256,6 +257,7 @@ public class ContainerService {
                 containerPeriod.getPeriod().getContainerEconomy(),
                 container.getStartDate(),
                 container.getEndDate(),
+                container.getCreatedAt(),
                 container.getColor(),
                 expenseDtos
         );
