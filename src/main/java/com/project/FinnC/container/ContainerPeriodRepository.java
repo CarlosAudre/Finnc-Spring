@@ -45,8 +45,9 @@ public interface ContainerPeriodRepository extends JpaRepository<ContainerPeriod
             JOIN cp.container c
             WHERE cp.period.year = :year 
             AND cp.period.month = :month
+            AND c.user.id= :userId
             ORDER BY cp.totalSpent DESC
             """)
-    List<MostExpensivesContainersDto> findMostExpensivesContainers(int year, Month month);
+    List<MostExpensivesContainersDto> findMostExpensivesContainers(int year, Month month, Long userId);
 
 }

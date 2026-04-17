@@ -45,7 +45,8 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
             JOIN cp.container c
             WHERE cp.period.year = :year
             AND cp.period.month = :month
+            AND c.user.id = :userId
             ORDER BY e.createdAt DESC
             """)
-    List<LastExpensesDto> findLastExpenses(int year, Month month,  Pageable pageable);
+    List<LastExpensesDto> findLastExpenses(int year, Month month, Long userId, Pageable pageable);
 }

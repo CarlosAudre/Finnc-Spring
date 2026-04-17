@@ -263,7 +263,7 @@ public class ContainerService {
         );
     }
 
-    public List<MostExpensivesContainersDto> getMostExpensivesContainers(int year, Month month){
-        return containerPeriodRepository.findMostExpensivesContainers(year, month);
+    public List<MostExpensivesContainersDto> getMostExpensivesContainers(int year, Month month, User user){
+        return containerPeriodRepository.findMostExpensivesContainers(year, month, user.getId());
     }
 }

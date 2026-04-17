@@ -295,8 +295,8 @@ public class ExpenseService {
         }
     }
 
-    public List<LastExpensesDto> getLastExpensesDtos(int year, Month month){
+    public List<LastExpensesDto> getLastExpensesDtos(int year, Month month, User user){
         Pageable pageable = PageRequest.of(0, 5);
-        return expenseContainerRepository.findLastExpenses(year, month, pageable);
+        return expenseContainerRepository.findLastExpenses(year, month,  user.getId(), pageable);
     }
 }
