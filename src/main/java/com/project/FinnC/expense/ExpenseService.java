@@ -4,6 +4,7 @@ import com.project.FinnC.container.Container;
 import com.project.FinnC.container.ContainerPeriod;
 import com.project.FinnC.container.ContainerPeriodRepository;
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
+import com.project.FinnC.exeptions.DataInvalidaException;
 import com.project.FinnC.exeptions.ExpenseContainerNotFoundException;
 import com.project.FinnC.exeptions.InsufficientBalanceException;
 import com.project.FinnC.home.LastExpensesDto;
@@ -47,7 +48,7 @@ public class ExpenseService {
 
         if (expenseDto.endDate().isBefore(container.getStartDate())
                 || expenseDto.endDate().isAfter(container.getEndDate())) {
-            throw new RuntimeException("Data fora do período do container");
+            throw new DataInvalidaException("Data fora do período do container");
         }
 
         Expense expense = new Expense();
@@ -74,7 +75,7 @@ public class ExpenseService {
                     orElseThrow();
 
             if (expenseDto.value().compareTo(cp.getEconomy()) > 0) {
-                throw new RuntimeException("O valor da despesa é maior que o limite disponível");
+                throw new InsufficientBalanceException("O valor da despesa é maior que o limite disponível");
             }
 
             ExpenseContainer expenseContainer = new ExpenseContainer();
@@ -122,7 +123,7 @@ public class ExpenseService {
         Period currentPeriod = expenseContainer.getContainerPeriod().getPeriod();
         LocalDate currentPeriodDate = LocalDate.of(currentPeriod.getYear(), currentPeriod.getMonth().getValue(), 1);
         if (currentPeriodDate.isAfter(expenseDto.endDate())) {
-            throw new RuntimeException(
+            throw new DataInvalidaException(
                     "Não é possível definir uma data final anterior ao período atual."
             );
         }
@@ -130,7 +131,7 @@ public class ExpenseService {
         // Validate if new date is within container range
         if (expenseDto.endDate().isBefore(container.getStartDate())
                 || expenseDto.endDate().isAfter(container.getEndDate())) {
-            throw new RuntimeException("Data fora do período do container");
+            throw new DataInvalidaException("Data fora do período do container");
         }
 
         Expense expense = expenseContainer.getExpense();

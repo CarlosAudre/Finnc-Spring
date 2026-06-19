@@ -2,7 +2,9 @@ package com.project.FinnC.container;
 
 import com.project.FinnC.exeptions.ContainerPeriodNotFoundException;
 
+import com.project.FinnC.exeptions.DataInvalidaException;
 import com.project.FinnC.exeptions.InsufficientBalanceException;
+import com.project.FinnC.exeptions.PeriodNotFoundException;
 import com.project.FinnC.expense.*;
 import com.project.FinnC.home.MostExpensivesContainersDto;
 import com.project.FinnC.period.Period;
@@ -36,11 +38,11 @@ public class ContainerService {
     public ContainerDto createContainer(ContainerDto dto, User user, Month month, int year) {
 
         if (dto.endDate().isBefore(dto.startDate())){
-            throw new RuntimeException("A data de fim não pode ser antes da data de inicio");
+            throw new DataInvalidaException("A data de fim não pode ser antes da data de inicio");
         }
 
         Period currentPeriod = periodRepository.findByUserAndMonthAndYear(user,month, year)
-                .orElseThrow(() -> new RuntimeException("Period not found"));
+                .orElseThrow(PeriodNotFoundException::new);
 
         Container container = new Container();
         container.setUser(user);
@@ -88,14 +90,14 @@ public class ContainerService {
         Container container = containerPeriod.getContainer();
 
         if(dto.endDate().isBefore(container.getStartDate())){
-            throw new RuntimeException(("A data de fim não pode ser anterior à data de início."));
+            throw new DataInvalidaException("A data de fim não pode ser anterior à data de início.");
         }
 
         Period period = containerPeriod.getPeriod();
 
         LocalDate currentPeriodDate = LocalDate.of(period.getYear(), period.getMonth().getValue(), 1);
         if (currentPeriodDate.isAfter(dto.endDate())) {
-            throw new RuntimeException(
+            throw new DataInvalidaException(
                     "Não é possível definir uma data final anterior ao período atual."
             );
         }
@@ -106,7 +108,7 @@ public class ContainerService {
         List<Expense> expenses = container.getExpenses();
         for(Expense expense : expenses){
             if (expense.getEndDate().isAfter(dto.endDate())){
-                throw new RuntimeException("Redução de data inválida: existe despesa conflitante.");
+                throw new DataInvalidaException("Redução de data inválida: existe despesa conflitante.");
             }
         }
 
@@ -158,11 +160,11 @@ public class ContainerService {
 
     private static BigDecimal getBigDecimal(ContainerDto dto, ContainerPeriod containerPeriod, Period period) {
         if (dto.totalValue().compareTo(containerPeriod.getTotalSpent()) < 0) {
-            throw new RuntimeException("O total gasto do container é maior que o novo valor inserido");
+            throw new InsufficientBalanceException("O total gasto do container é maior que o novo valor inserido");
         }
 
         if (dto.totalValue().compareTo(period.getValue()) > 0) {
-            throw new RuntimeException("O saldo do período é menor que o novo valor inserido");
+            throw new InsufficientBalanceException("O saldo do período é menor que o novo valor inserido");
         }
 
         BigDecimal currentContainerBalance = containerPeriod.getTotalValue();

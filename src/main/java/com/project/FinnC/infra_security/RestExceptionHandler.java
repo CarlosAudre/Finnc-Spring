@@ -39,4 +39,16 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         RestErrorMessage response = new RestErrorMessage(HttpStatus.UNAUTHORIZED, exception.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
+
+    @ExceptionHandler(DataInvalidaException.class)
+    private ResponseEntity<RestErrorMessage> DataInvalidaExceptionHandler(DataInvalidaException exception){
+        RestErrorMessage response = new RestErrorMessage(HttpStatus.BAD_REQUEST, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(PeriodNotFoundException.class)
+    private ResponseEntity<RestErrorMessage> PeriodNotFoundExceptionHandler(PeriodNotFoundException exception){
+        RestErrorMessage response = new RestErrorMessage(HttpStatus.NOT_FOUND, exception.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
 }
