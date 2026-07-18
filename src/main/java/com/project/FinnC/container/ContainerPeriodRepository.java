@@ -3,6 +3,7 @@ package com.project.FinnC.container;
 import com.project.FinnC.dashboard.DashboardCategoriesDto;
 import com.project.FinnC.home.MostExpensivesContainersDto;
 import com.project.FinnC.period.Period;
+import com.project.FinnC.user.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -18,6 +19,7 @@ public interface ContainerPeriodRepository extends JpaRepository<ContainerPeriod
     Boolean existsByContainerAndPeriod(Container container, Period period);
     List<ContainerPeriod> findByContainer(Container container);
     Optional<ContainerPeriod> findByContainerAndPeriod(Container container, Period period);
+    List<ContainerPeriod> findByPeriodYearAndPeriodUser(int year, User user);
 
     @Query("""
     SELECT COALESCE(SUM(cp.totalValue), 0)

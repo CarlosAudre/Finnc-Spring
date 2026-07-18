@@ -15,6 +15,8 @@ import java.util.List;
 public interface PeriodRepository extends JpaRepository<Period, Long> {
     Optional<Period> findByUserAndMonthAndYear(User user, Month month, int year);
 
+    List<Period> findByYearAndUser(int year, User user);
+
     @Query("""
             SELECT COALESCE(SUM(p.value), 0)
             FROM Period p

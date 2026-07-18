@@ -23,6 +23,24 @@ public interface ExpenseContainerRepository extends JpaRepository<ExpenseContain
     Boolean existsByExpenseAndContainerPeriod(Expense expense, ContainerPeriod containerPeriod);
 
     @Query("""
+    SELECT ec
+    FROM ExpenseContainer ec
+    JOIN ec.containerPeriod cp
+    WHERE cp.period = :period
+""")
+    List<ExpenseContainer> findByPeriod(Period period);
+
+    @Query("""
+    SELECT ec
+    FROM ExpenseContainer ec
+    JOIN ec.containerPeriod cp
+    JOIN cp.period p
+    WHERE p.year = :year    
+    AND p.user = :user    
+""")
+    List<ExpenseContainer> findExpenseByPeriodYearAndUser(int year, User user);
+
+    @Query("""
     SELECT COALESCE(SUM(ec.value), 0)
     FROM ExpenseContainer ec
     WHERE ec.containerPeriod = :cp
