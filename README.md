@@ -1,4 +1,4 @@
-# 📌 FinnC API
+# 📌 FinnC API (branch master)
 
 API REST para gerenciamento financeiro desenvolvida com **Java** e **Spring Boot**, responsável pelo controle de períodos, categorias de despesas, despesas, autenticação de usuários e integração com IA.
 
