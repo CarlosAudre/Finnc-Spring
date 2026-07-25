@@ -120,3 +120,6 @@ Durante o desenvolvimento do FinnC, alguns dos principais desafios foram:
 ## 📄 Licença
 
 Projeto desenvolvido para fins de estudo e demonstração de conhecimentos em desenvolvimento Full Stack.
+
+Essa API executa em conjunto com a seguinte front-end -> https://github.com/CarlosAudre/Finnc-React
+
